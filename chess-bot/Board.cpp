@@ -3,7 +3,6 @@
 //
 
 #include "Board.h"
-#include <chess.hpp>
 
 std::unordered_map<PieceType, std::function<std::vector<std::string>(Board*, PieceColor, uint8_t, uint8_t)> >
 Board::moveFunctions = {
@@ -19,11 +18,11 @@ Board::Board() {
     setStartingBoard();
 }
 
-Board::Board(std::string fen) {
+Board::Board(const std::string &fen) {
     resetBoard();
 
     // get an object representing the board as passed in from fen
-    auto fenBoard = fenBoardFromString(std::move(fen));
+    auto fenBoard = fenBoardFromString(fen);
     mColorTurn = fenBoard.whiteTurn ? PieceColor::WHITE : PieceColor::BLACK;
     mFullMove = fenBoard.fullMove;
     mHalfMove = fenBoard.halfMove;

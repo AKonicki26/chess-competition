@@ -6,7 +6,6 @@
 #define CHESS_COMPETITION_BOARD_H
 
 #include <string>
-#include <utility>
 #include <vector>
 #include <sstream>
 #include <ranges>
@@ -14,15 +13,6 @@
 #include <atomic>
 #include <functional>
 #include <unordered_map>
-
-struct FenBoard {
-    std::string pieceInfo;
-    bool whiteTurn = true;
-    std::string castling;
-    std::string enPassant;
-    int halfMove = 0;
-    int fullMove = 0;
-};
 
 enum class PieceType: uint8_t {
     EMPTY = 0b000,
@@ -75,7 +65,16 @@ struct Piece {
     }
 };
 
-FenBoard fenBoardFromString(std::string fen) {
+struct FenBoard {
+    std::string pieceInfo;
+    bool whiteTurn = true;
+    std::string castling;
+    std::string enPassant;
+    int halfMove = 0;
+    int fullMove = 0;
+};
+
+inline FenBoard fenBoardFromString(std::string fen) {
     FenBoard fenSplit;
     std::vector<std::string> segments;
     // split the fen string on space
@@ -96,7 +95,7 @@ class Board {
 public:
     Board();
 
-    Board(std::string fen);
+    Board(const std::string &fen);
 
     Piece getPiece(const uint8_t rank, const uint8_t file) const;
 
@@ -107,6 +106,8 @@ public:
     void setPiece(const Piece piece, const std::string &square);
 
     std::vector<std::string> getValidMoves(PieceColor color);
+
+    PieceColor getCurrentColor() const { return mColorTurn; };
 
 private:
     PieceColor mColorTurn = PieceColor::WHITE;
@@ -144,54 +145,68 @@ private:
 
 
     // Pawn move function
-    static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
-        std::vector<std::string> possibleMoves;
+static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
+    std::vector<std::string> possibleMoves;
 
-        int rankMovementDirection;
-
-        // Starting 2 square
-        if (color == PieceColor::WHITE) {
-            rankMovementDirection = 1;
-            if (rank == 1)
-                possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(rank + 2, file));
-        } else {
-            rankMovementDirection = -1;
-            if (rank == 6)
-                possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(rank - 2, file));
-        }
-
-        // normal move
-        if (board->getPiece(rank + rankMovementDirection, file).isEmpty())
-            possibleMoves.emplace_back(
-                coordsToAlgebraic(rank, file) + coordsToAlgebraic(rank + rankMovementDirection, file) +
-                // promoting
-                ((rank + rankMovementDirection == 7 || rank + rankMovementDirection == 0) ? "q" : "")
-            );
-
-        // capture
-        Piece leftDiagonal, rightDiagonal;
-        leftDiagonal = board->getPiece(rank + rankMovementDirection, file - 1);
-        rightDiagonal = board->getPiece(rank + rankMovementDirection, file + 1);
-
-        if (!leftDiagonal.isEmpty() && leftDiagonal.color != color) {
-            possibleMoves.emplace_back(
-                coordsToAlgebraic(rank, file) + coordsToAlgebraic(rank + rankMovementDirection, file - 1) +
-                // promoting
-                ((rank + rankMovementDirection == 7 || rank + rankMovementDirection == 0) ? "q" : "")
-            );
-        }
-
-        if (!rightDiagonal.isEmpty() && rightDiagonal.color != color) {
-            possibleMoves.emplace_back(
-                coordsToAlgebraic(rank, file) + coordsToAlgebraic(rank + rankMovementDirection, file + 1) +
-                // promoting
-                ((rank + rankMovementDirection == 7 || rank + rankMovementDirection == 0) ? "q" : "")
-            );
-        }
-
-        // TODO: En passant
+    int rankMovementDirection = (color == PieceColor::WHITE) ? 1 : -1;
+    
+    // Check for boundary conditions first
+    if ((color == PieceColor::WHITE && rank == 7) || (color == PieceColor::BLACK && rank == 0)) {
+        // Pawn is already at the end of the board, can't move further
         return possibleMoves;
     }
+    
+    // Single square forward move
+    int newRank = rank + rankMovementDirection;
+    if (newRank >= 0 && newRank < 8) {  // Ensure new rank is on board
+        if (board->getPiece(newRank, file).isEmpty()) {
+            // Check if it's a promotion move
+            if (newRank == 7 || newRank == 0) {
+                // Add promotion moves (queen, rook, bishop, knight)
+                possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, file) + "q");
+                possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, file) + "r");
+                possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, file) + "b");
+                possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, file) + "n");
+            } else {
+                // Regular move
+                possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, file));
+                
+                // Two square move from starting position
+                if ((color == PieceColor::WHITE && rank == 1) || (color == PieceColor::BLACK && rank == 6)) {
+                    int twoSquareRank = rank + (2 * rankMovementDirection);
+                    if (board->getPiece(twoSquareRank, file).isEmpty()) {
+                        possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(twoSquareRank, file));
+                    }
+                }
+            }
+        }
+    }
+    
+    // Captures to the left and right
+    for (int fileOffset : {-1, 1}) {
+        int newFile = file + fileOffset;
+        if (newFile >= 0 && newFile < 8) {  // Ensure new file is on board
+            Piece targetPiece = board->getPiece(newRank, newFile);
+            if (!targetPiece.isEmpty() && targetPiece.color != color) {
+                // It's an enemy piece, can capture
+                if (newRank == 7 || newRank == 0) {
+                    // Capture with promotion
+                    possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile) + "q");
+                    possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile) + "r");
+                    possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile) + "b");
+                    possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile) + "n");
+                } else {
+                    // Regular capture
+                    possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile));
+                }
+            }
+        }
+    }
+    
+    // TODO: En passant
+    
+    return possibleMoves;
+}
 
     // Knight move function
     static std::vector<std::string> knightMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
