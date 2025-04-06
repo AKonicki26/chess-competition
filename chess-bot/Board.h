@@ -104,9 +104,9 @@ public:
 
     void setPiece(const Piece piece, uint8_t rank, uint8_t file);
 
-    void setPiece((const Piece piece, const std::string &square);
+    void setPiece(const Piece piece, const std::string &square);
 
-    std::vector<const std::string> getValidMoves(PieceColor color);
+    std::vector<std::string> getValidMoves(PieceColor color);
 
 private:
     PieceColor mColorTurn = PieceColor::WHITE;
@@ -143,7 +143,8 @@ private:
     }
 
 
-    static std::vector<std::string> pawnMove(PieceColor color, uint8_t rank, uint8_t file) {
+    // Pawn move function
+    static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         int rankMovementDirection;
@@ -160,7 +161,7 @@ private:
         }
 
         // normal move
-        if (getPiece(rank + rankMovementDirection, file).isEmpty())
+        if (board->getPiece(rank + rankMovementDirection, file).isEmpty())
             possibleMoves.emplace_back(
                 coordsToAlgebraic(rank, file) + coordsToAlgebraic(rank + rankMovementDirection, file) +
                 // promoting
@@ -169,8 +170,8 @@ private:
 
         // capture
         Piece leftDiagonal, rightDiagonal;
-        leftDiagonal = getPiece(rank + rankMovementDirection, file - 1);
-        rightDiagonal = getPiece(rank + rankMovementDirection, file + 1);
+        leftDiagonal = board->getPiece(rank + rankMovementDirection, file - 1);
+        rightDiagonal = board->getPiece(rank + rankMovementDirection, file + 1);
 
         if (!leftDiagonal.isEmpty() && leftDiagonal.color != color) {
             possibleMoves.emplace_back(
@@ -193,7 +194,7 @@ private:
     }
 
     // Knight move function
-    static std::vector<std::string> knightMove(PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> knightMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All possible knight moves (L-shapes)
@@ -209,7 +210,7 @@ private:
             // Check if the new position is on the board
             if (newRank >= 0 && newRank < 8 && newFile >= 0 && newFile < 8) {
                 // Check if the square is empty or has an enemy piece
-                Piece targetPiece = getPiece(newRank, newFile);
+                Piece targetPiece = board->getPiece(newRank, newFile);
                 if (targetPiece.isEmpty() || targetPiece.color != color) {
                     possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile));
                 }
@@ -220,7 +221,7 @@ private:
     }
 
     // Bishop move function
-    static std::vector<std::string> bishopMove(PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> bishopMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All diagonal directions
@@ -241,7 +242,7 @@ private:
                     break; // Out of bounds
                 }
 
-                Piece targetPiece = getPiece(newRank, newFile);
+                Piece targetPiece = board->getPiece(newRank, newFile);
                 if (targetPiece.isEmpty()) {
                     // Empty square, can move here
                     possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile));
@@ -260,7 +261,7 @@ private:
     }
 
     // Rook move function
-    static std::vector<std::string> rookMove(PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> rookMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All orthogonal directions
@@ -281,7 +282,7 @@ private:
                     break; // Out of bounds
                 }
 
-                Piece targetPiece = getPiece(newRank, newFile);
+                Piece targetPiece = board->getPiece(newRank, newFile);
                 if (targetPiece.isEmpty()) {
                     // Empty square, can move here
                     possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile));
@@ -300,7 +301,7 @@ private:
     }
 
     // Queen move function (combines bishop and rook)
-    static std::vector<std::string> queenMove(PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> queenMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All 8 directions (combinations of orthogonal and diagonal)
@@ -322,7 +323,7 @@ private:
                     break; // Out of bounds
                 }
 
-                Piece targetPiece = getPiece(newRank, newFile);
+                Piece targetPiece = board->getPiece(newRank, newFile);
                 if (targetPiece.isEmpty()) {
                     // Empty square, can move here
                     possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile));
@@ -341,7 +342,7 @@ private:
     }
 
     // King move function
-    static std::vector<std::string> kingMove(PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> kingMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All 8 directions for one square
@@ -356,7 +357,7 @@ private:
                 // Check if the new position is on the board
                 if (newRank >= 0 && newRank < 8 && newFile >= 0 && newFile < 8) {
                     // Check if the square is empty or has an enemy piece
-                    Piece targetPiece = getPiece(newRank, newFile);
+                    Piece targetPiece = board->getPiece(newRank, newFile);
                     if (targetPiece.isEmpty() || targetPiece.color != color) {
                         possibleMoves.emplace_back(coordsToAlgebraic(rank, file) + coordsToAlgebraic(newRank, newFile));
                     }
@@ -372,7 +373,7 @@ private:
         PieceType,
         std::function<
             std::vector<std::string>
-            (PieceColor, uint8_t, uint8_t)
+            (Board* board, PieceColor, uint8_t, uint8_t)
         >
     > moveFunctions;
 };

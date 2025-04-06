@@ -5,7 +5,7 @@
 #include "Board.h"
 #include <chess.hpp>
 
-std::unordered_map<PieceType, std::function<std::vector<std::string>(PieceColor, uint8_t, uint8_t)> >
+std::unordered_map<PieceType, std::function<std::vector<std::string>(Board*, PieceColor, uint8_t, uint8_t)> >
 Board::moveFunctions = {
     {PieceType::PAWN, Board::pawnMove},
     {PieceType::KNIGHT, Board::knightMove},
@@ -70,13 +70,13 @@ void Board::setPiece(const Piece piece, uint8_t rank, uint8_t file) {
 }
 
 
-std::vector<const std::string> Board::getValidMoves(PieceColor color) {
-    std::vector<const std::string> validMoves;
+std::vector< std::string> Board::getValidMoves(PieceColor color) {
+    std::vector<std::string> validMoves;
 
-    auto getMovesForPiece = [](const Piece piece, uint8_t rank, uint8_t file) -> std::vector<std::string> {
+    auto getMovesForPiece = [&](const Piece piece, uint8_t rank, uint8_t file) -> std::vector<std::string> {
         if (piece.isEmpty())
             return {};
-        return moveFunctions[piece.type](piece.color, rank, file);
+        return moveFunctions[piece.type](this, piece.color, rank, file);
     };
 
     for (int rank = 0; rank < 8; rank++) {
