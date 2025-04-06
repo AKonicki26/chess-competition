@@ -3,6 +3,8 @@
 // https://github.com/Disservin/chess-library
 #include "chess.hpp"
 #include <random>
+
+#include "Board.h"
 using namespace ChessSimulator;
 
 std::string ChessSimulator::Move(std::string fen) {
@@ -14,9 +16,8 @@ std::string ChessSimulator::Move(std::string fen) {
   // using the one provided by the library
 
   // here goes a random movement
-  chess::Board board(fen);
-  chess::Movelist moves;
-  chess::movegen::legalmoves(moves, board);
+  Board board(fen);
+  auto moves = board.getValidMoves(board.getCurrentColor());
   if(moves.size() == 0)
     return "";
 
@@ -25,5 +26,5 @@ std::string ChessSimulator::Move(std::string fen) {
   std::mt19937 gen(rd());
   std::uniform_int_distribution<> dist(0, moves.size() - 1);
   auto move = moves[dist(gen)];
-  return chess::uci::moveToUci(move);
+  return move;
 }
