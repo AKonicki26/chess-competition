@@ -4,6 +4,8 @@
 
 #include "Board.h"
 
+#include <iostream>
+
 std::unordered_map<PieceType, std::function<std::vector<std::string>(Board*, PieceColor, uint8_t, uint8_t)> >
 Board::moveFunctions = {
     {PieceType::PAWN, Board::pawnMove},
@@ -91,6 +93,27 @@ std::vector< std::string> Board::getValidMoves(PieceColor color) {
     }
 
     return validMoves;
+}
+
+void Board::printBoard() const {
+    std::cout << "  a b c d e f g h" << std::endl;
+    
+    for (int rank = 7; rank >= 0; rank--) {
+        std::cout << (rank + 1) << " ";
+        
+        for (int file = 0; file < 8; file++) {
+            std::cout << mBoard[rank][file].toChar() << " ";
+        }
+        
+        std::cout << (rank + 1) << std::endl;
+    }
+    
+    std::cout << "  a b c d e f g h" << std::endl;
+    
+    // Print additional state information
+    std::cout << (mColorTurn == PieceColor::WHITE ? "White" : "Black") << " to move" << std::endl;
+    std::cout << "Half moves: " << static_cast<int>(mHalfMove) << std::endl;
+    std::cout << "Full moves: " << static_cast<int>(mFullMove) << std::endl;
 }
 
 void Board::resetBoard() {

@@ -109,6 +109,8 @@ public:
 
     PieceColor getCurrentColor() const { return mColorTurn; };
 
+    void printBoard() const;
+
 private:
     PieceColor mColorTurn = PieceColor::WHITE;
     uint8_t mHalfMove;
