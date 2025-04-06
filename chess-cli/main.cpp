@@ -1,10 +1,19 @@
+#include <iostream>
+
 #include "chess-simulator.h"
-#include "chess.hpp"
 #include <string>
 
+#include "Board.h"
+
 int main() {
-    std::string fen;
-    getline(std::cin, fen);
-    auto move = ChessSimulator::Move(fen);
-    std::cout << move << std::endl;
+    Board board;
+    auto moves = board.getValidMoves(board.getCurrentColor());
+
+    board.printBoard();
+
+    std::cout << "\n";
+
+    for (auto move : moves) {
+        std::cout << move << "\n";
+    }
 }
