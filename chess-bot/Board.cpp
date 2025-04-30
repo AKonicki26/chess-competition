@@ -6,8 +6,8 @@
 
 #include <iostream>
 
-std::unordered_map<PieceType, std::function<std::vector<std::string>(Board*, PieceColor, uint8_t, uint8_t)> >
-Board::moveFunctions = {
+
+BoardMap Board::moveFunctions = {
     {PieceType::PAWN, Board::pawnMove},
     {PieceType::KNIGHT, Board::knightMove},
     {PieceType::BISHOP, Board::bishopMove},
@@ -83,12 +83,19 @@ std::vector< std::string> Board::getValidMoves(PieceColor color) {
     for (int rank = 0; rank < 8; rank++) {
         for (int file = 0; file < 8; file++) {
             Piece currentPiece = getPiece(rank, file);
-            if (currentPiece.color != color)
+            if (currentPiece.isEmpty() || currentPiece.color != color)
                 continue;
 
             auto moves = getMovesForPiece(currentPiece, rank, file);
-            // append the moves for the current piece onto the list of all moves
-            validMoves.insert(validMoves.end(), moves.begin(), moves.end());
+
+            // iterate through all moves. If the king is in check after making the move, it is not legal
+            // if it is legal, append it to the list
+            for (auto& move : moves)
+            {
+                auto boardAfterMove = makeMove(move);
+                if (!boardAfterMove.inCheck(color))
+                    validMoves.push_back(move);
+            }
         }
     }
 
@@ -154,4 +161,62 @@ void Board::setStartingBoard() {
     setPiece(Piece(PieceType::BISHOP, PieceColor::BLACK), 7, 5);
     setPiece(Piece(PieceType::KNIGHT, PieceColor::BLACK), 7, 6);
     setPiece(Piece(PieceType::ROOK, PieceColor::BLACK), 7, 7);
+}
+
+Board Board::makeMove(const std::string& move) const
+{
+    // Copy current board
+    Board newBoard = *this; 
+
+    // get to and from where a piece is moving
+    const int fromFile = move[0] - 'a';
+    const int fromRank = 8 - (move[1] - '0');
+    const int toFile = move[2] - 'a';
+    const int toRank = 8 - (move[3] - '0');
+
+    // get the piece at the original position
+    const Piece movingPiece = getPiece(fromRank, fromFile);
+
+    // set the old position to empty and the new position to the moving piece
+    newBoard.setPiece(movingPiece, toRank, toFile);
+    newBoard.setPiece(Piece(), fromRank, fromFile); 
+
+    return newBoard;
+}
+
+bool Board::inCheck(PieceColor color) const
+{
+    // Locate the king
+    int kingRank = -1, kingFile = -1;
+    for (int r = 0; r < 8; ++r) {
+        for (int f = 0; f < 8; ++f) {
+            Piece p = getPiece(r, f);
+            if (p.type == PieceType::KING && p.color == color) {
+                kingRank = r;
+                kingFile = f;
+                break;
+            }
+        }
+    }
+
+    if (kingRank == -1) return false; // Defensive fallback
+
+    // Loop through all enemy pieces and see if any can attack the king
+    PieceColor opponent = (color == PieceColor::WHITE) ? PieceColor::BLACK : PieceColor::WHITE;
+    for (int r = 0; r < 8; ++r) {
+        for (int f = 0; f < 8; ++f) {
+            Piece p = getPiece(r, f);
+            if (p.isEmpty() || p.color != opponent) continue;
+
+            std::vector<std::string> attacks = moveFunctions[p.type](this, p.color, r, f);
+            for (const std::string& move : attacks) {
+                int toFile = move[2] - 'a';
+                int toRank = 8 - (move[3] - '0');
+                if (toRank == kingRank && toFile == kingFile)
+                    return true;
+            }
+        }
+    }
+
+    return false;
 }

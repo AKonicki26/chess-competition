@@ -14,6 +14,8 @@
 #include <functional>
 #include <unordered_map>
 
+#define BoardMap std::unordered_map<PieceType, std::function<std::vector<std::string>(const Board*, PieceColor, uint8_t, uint8_t)>> 
+
 enum class PieceType: uint8_t {
     EMPTY = 0b000,
     PAWN = 0b001,
@@ -127,6 +129,12 @@ private:
 
     void setStartingBoard();
 
+    // return a new board object representing the move that was made
+    Board makeMove(const std::string& move) const;
+
+    // See if the current board is in check or not
+    bool inCheck(PieceColor color) const;
+
     static bool algebraicToCoords(const std::string &algebraic, int &rank, int &file) {
         if (algebraic.length() != 2) return false;
 
@@ -147,7 +155,7 @@ private:
 
 
     // Pawn move function
-static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> pawnMove(const Board* board, PieceColor color, uint8_t rank, uint8_t file) {
     std::vector<std::string> possibleMoves;
 
     int rankMovementDirection = (color == PieceColor::WHITE) ? 1 : -1;
@@ -211,7 +219,7 @@ static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t
 }
 
     // Knight move function
-    static std::vector<std::string> knightMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> knightMove(const Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All possible knight moves (L-shapes)
@@ -238,7 +246,7 @@ static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t
     }
 
     // Bishop move function
-    static std::vector<std::string> bishopMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> bishopMove(const Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All diagonal directions
@@ -278,7 +286,7 @@ static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t
     }
 
     // Rook move function
-    static std::vector<std::string> rookMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> rookMove(const Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All orthogonal directions
@@ -318,7 +326,7 @@ static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t
     }
 
     // Queen move function (combines bishop and rook)
-    static std::vector<std::string> queenMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> queenMove(const Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All 8 directions (combinations of orthogonal and diagonal)
@@ -359,7 +367,7 @@ static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t
     }
 
     // King move function
-    static std::vector<std::string> kingMove(Board* board, PieceColor color, uint8_t rank, uint8_t file) {
+    static std::vector<std::string> kingMove(const Board* board, PieceColor color, uint8_t rank, uint8_t file) {
         std::vector<std::string> possibleMoves;
 
         // All 8 directions for one square
@@ -386,13 +394,7 @@ static std::vector<std::string> pawnMove(Board* board, PieceColor color, uint8_t
     }
 
     // Map that represents a function for each type of piece
-    static std::unordered_map<
-        PieceType,
-        std::function<
-            std::vector<std::string>
-            (Board* board, PieceColor, uint8_t, uint8_t)
-        >
-    > moveFunctions;
+    static BoardMap moveFunctions;
 };
 
 
