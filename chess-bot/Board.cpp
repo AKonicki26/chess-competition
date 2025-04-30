@@ -70,7 +70,7 @@ void Board::setPiece(const Piece piece, uint8_t rank, uint8_t file) {
 }
 
 
-std::vector< std::string> Board::getValidMoves(PieceColor color) {
+std::vector< std::string> Board::getValidMoves(PieceColor color) const {
     std::vector<std::string> validMoves;
 
     auto getMovesForPiece = [&](const Piece piece, uint8_t rank, uint8_t file) -> std::vector<std::string> {
@@ -121,6 +121,42 @@ void Board::printBoard() const {
     std::cout << (mColorTurn == PieceColor::WHITE ? "White" : "Black") << " to move" << std::endl;
     std::cout << "Half moves: " << static_cast<int>(mHalfMove) << std::endl;
     std::cout << "Full moves: " << static_cast<int>(mFullMove) << std::endl;
+}
+
+int Board::evaluate(const PieceColor color) const
+{
+    int score = 0;
+
+    // Give points for having more pieces alive than the other player
+    
+    // Go through each piece on the board
+    for (int rank = 0; rank < 8; ++rank) {
+        for (int file = 0; file < 8; ++file) {
+            Piece piece = getPiece(rank, file);
+            if (piece.isEmpty()) continue;
+
+            // Assign a value to each piece
+            int value = 0;
+            switch (piece.type) {
+            case PieceType::PAWN:   value = 1; break;
+            case PieceType::KNIGHT: value = 3; break;
+            case PieceType::BISHOP: value = 3; break;
+            case PieceType::ROOK:   value = 5; break;
+            case PieceType::QUEEN:  value = 9; break;
+            case PieceType::KING:   value = 0; break;
+            default: break;
+            }
+
+            // If it's our piece, give us points
+            if (piece.color == color)
+                score += value;
+            // otherwise, take away points
+            else
+                score -= value;
+        }
+    }
+
+    return score;
 }
 
 void Board::resetBoard() {

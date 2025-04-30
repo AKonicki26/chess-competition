@@ -31,6 +31,11 @@ enum class PieceColor: uint8_t {
     WHITE = 0b1
 };
 
+inline PieceColor oppositeColor(const PieceColor& color)
+{
+    return color == PieceColor::WHITE ? PieceColor::BLACK : PieceColor::WHITE;
+}
+
 struct Piece {
     PieceType type: 3;
     PieceColor color: 1;
@@ -101,17 +106,18 @@ public:
 
     Piece getPiece(const uint8_t rank, const uint8_t file) const;
 
-    Piece getPiece(const std::string &square) const;
-
     void setPiece(const Piece piece, uint8_t rank, uint8_t file);
 
-    void setPiece(const Piece piece, const std::string &square);
-
-    std::vector<std::string> getValidMoves(PieceColor color);
+    std::vector<std::string> getValidMoves(PieceColor color) const;
 
     PieceColor getCurrentColor() const { return mColorTurn; };
 
     void printBoard() const;
+
+    int evaluate(const PieceColor color) const;
+
+    // return a new board object representing the move that was made
+    Board makeMove(const std::string& move) const;
 
 private:
     PieceColor mColorTurn = PieceColor::WHITE;
@@ -128,10 +134,7 @@ private:
     void resetBoard();
 
     void setStartingBoard();
-
-    // return a new board object representing the move that was made
-    Board makeMove(const std::string& move) const;
-
+    
     // See if the current board is in check or not
     bool inCheck(PieceColor color) const;
 
