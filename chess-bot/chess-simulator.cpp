@@ -3,6 +3,7 @@
 // https://github.com/Disservin/chess-library
 #include "chess.hpp"
 #include <random>
+#include <thread>
 
 #include "Board.h"
 #include "Minimax.h"
@@ -32,8 +33,12 @@ std::string ChessSimulator::Move(std::string fen) {
   */
 
   auto algorithm = Minimax(fen);
+
   
-  return algorithm.getBestMove(3);
+  std::thread moveThread(&Minimax::findBestMove, &algorithm, 4);
+  moveThread.join();
+  
+  return algorithm.getBestMove();
   
 
   

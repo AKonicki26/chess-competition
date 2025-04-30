@@ -98,6 +98,13 @@ inline FenBoard fenBoardFromString(std::string fen) {
     return fenSplit;
 }
 
+struct MoveUndoInfo {
+    Piece capturedPiece;
+    std::pair<uint8_t, uint8_t> from;
+    std::pair<uint8_t, uint8_t> to;
+    Piece movedPiece;
+};
+
 class Board {
 public:
     Board();
@@ -108,7 +115,7 @@ public:
 
     void setPiece(const Piece piece, uint8_t rank, uint8_t file);
 
-    std::vector<std::string> getValidMoves(PieceColor color) const;
+    std::vector<std::string> getValidMoves(PieceColor color);
 
     PieceColor getCurrentColor() const { return mColorTurn; };
 
@@ -116,8 +123,11 @@ public:
 
     int evaluate(const PieceColor color) const;
 
-    // return a new board object representing the move that was made
-    Board makeMove(const std::string& move) const;
+    // return a make the move on the board, give information as to how to undo the move
+    MoveUndoInfo makeMove(const std::string& move);
+
+    void undoMove();
+    void undoMove(MoveUndoInfo undoInfo);
 
 private:
     PieceColor mColorTurn = PieceColor::WHITE;
@@ -160,7 +170,6 @@ private:
 
         return std::string(1, 'a' + file) + std::string(1, '1' + rank);
     }
-
 
     // Pawn move function
     static std::vector<std::string> pawnMove(const Board* board, PieceColor color, uint8_t rank, uint8_t file) {
@@ -403,6 +412,8 @@ private:
 
     // Map that represents a function for each type of piece
     static BoardMap moveFunctions;
+    
+    MoveUndoInfo undoInformation;
 };
 
 

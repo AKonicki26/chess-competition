@@ -4,8 +4,10 @@
 
 #include "Minimax.h"
 
+#include <thread>
+
 // look depth moves deep to find the best possible move for the current player
-std::string Minimax::getBestMove(int depth)
+std::string Minimax::findBestMove(int depth)
 {
     std::string bestMove;
 
@@ -14,21 +16,37 @@ std::string Minimax::getBestMove(int depth)
     auto startingColor = mpBoard->getCurrentColor();
     auto legalMoves = mpBoard->getValidMoves(startingColor);
 
+    std::mutex mutex;
+    std::vector<std::thread> threads;
+
     for (const auto& move : legalMoves)
     {
-        auto nextBoard = mpBoard->makeMove(move);
-        int boardScore = minimaxAlgorithm(nextBoard, depth - 1, false, oppositeColor(startingColor));
-        if (boardScore > bestValue)
+        threads.emplace_back([&, move]()
         {
-            bestValue = boardScore;
-            bestMove = move;
-        }
+            Board localBoard = *mpBoard;
+            auto undoInfo = localBoard.makeMove(move);
+            int boardScore = minimaxAlgorithm(localBoard, depth - 1, false, oppositeColor(startingColor));
+
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (boardScore > bestValue)
+                {
+                    bestValue = boardScore;
+                    bestMove = move;
+                }
+            }
+        });
     }
 
+    // wait for all of our threads to finish
+    for (auto& thread : threads)
+        thread.join();
+
+    mBestMove = bestMove;
     return bestMove;
 }
 
-int Minimax::minimaxAlgorithm(const Board& board, int depth, bool maximizing, PieceColor color)
+int Minimax::minimaxAlgorithm(Board& board, int depth, bool maximizing, PieceColor color)
 {
     if (depth == 0)
         return board.evaluate(color);
@@ -43,15 +61,21 @@ int Minimax::minimaxAlgorithm(const Board& board, int depth, bool maximizing, Pi
 
     for (const auto& move : legalMoves)
     {
-        Board nextBoard = board.makeMove(move);
-        int boardScore = minimaxAlgorithm(nextBoard, depth - 1, !maximizing, oppositeColor(color));
+        
+        auto undoInfo = board.makeMove(move);
+        
+        int boardScore = minimaxAlgorithm(board, depth - 1, !maximizing, oppositeColor(color));
 
+        board.undoMove(undoInfo);
+        
         if (maximizing)
             bestValue = std::max(bestValue, boardScore);
         else
             bestValue = std::min(bestValue, boardScore);
+        
     }
 
+    
     return bestValue;
     
 }

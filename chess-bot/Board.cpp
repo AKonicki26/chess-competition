@@ -70,7 +70,7 @@ void Board::setPiece(const Piece piece, uint8_t rank, uint8_t file) {
 }
 
 
-std::vector< std::string> Board::getValidMoves(PieceColor color) const {
+std::vector< std::string> Board::getValidMoves(PieceColor color) {
     std::vector<std::string> validMoves;
 
     auto getMovesForPiece = [&](const Piece piece, uint8_t rank, uint8_t file) -> std::vector<std::string> {
@@ -91,10 +91,10 @@ std::vector< std::string> Board::getValidMoves(PieceColor color) const {
             // if it is legal, append it to the list
             for (auto& move : moves)
             {
-                auto boardAfterMove = makeMove(move);
-                if (!boardAfterMove.inCheck(color))
+                makeMove(move);
+                if (!inCheck(color))
                     validMoves.push_back(move);
-                    
+                undoMove();
             }
         }
     }
@@ -199,11 +199,8 @@ void Board::setStartingBoard() {
     setPiece(Piece(PieceType::ROOK, PieceColor::BLACK), 7, 7);
 }
 
-Board Board::makeMove(const std::string& move) const
+MoveUndoInfo Board::makeMove(const std::string& move)
 {
-    // Copy current board
-    Board newBoard = *this; 
-
     // get to and from where a piece is moving
     const int fromFile = move[0] - 'a';
     const int fromRank = move[1] - '1';
@@ -212,12 +209,30 @@ Board Board::makeMove(const std::string& move) const
 
     // get the piece at the original position
     const Piece movingPiece = getPiece(fromRank, fromFile);
+    const Piece capturedPiece = getPiece(toRank, toFile);
 
     // set the old position to empty and the new position to the moving piece
-    newBoard.setPiece(movingPiece, toRank, toFile);
-    newBoard.setPiece(Piece(), fromRank, fromFile); 
+    setPiece(movingPiece, toRank, toFile);
+    setPiece(Piece(), fromRank, fromFile);
 
-    return newBoard;
+    undoInformation.capturedPiece = capturedPiece;
+    undoInformation.movedPiece = movingPiece;
+    undoInformation.to = {toRank, toFile};
+    undoInformation.from = {fromRank, fromFile};
+
+    return undoInformation;
+}
+
+void Board::undoMove()
+{
+    mBoard[undoInformation.from.first][undoInformation.from.second] = undoInformation.movedPiece;
+    mBoard[undoInformation.to.first][undoInformation.to.second] = undoInformation.capturedPiece;
+}
+
+void Board::undoMove(MoveUndoInfo undoInfo)
+{
+    this->undoInformation = undoInfo;
+    undoMove();
 }
 
 bool Board::inCheck(PieceColor color) const

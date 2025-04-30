@@ -13,11 +13,13 @@ class Minimax {
 public:
     explicit Minimax(const std::string& boardFen) : mpBoard(new Board(boardFen)) {}
 
-    std::string getBestMove(int depth);
+    std::string findBestMove(int depth);
+    std::string getBestMove() const { return mBestMove;}
 private:
     
-    int minimaxAlgorithm(const Board& board, int depth, bool maximizing, PieceColor color);
+    int minimaxAlgorithm(Board& board, int depth, bool maximizing, PieceColor color);
     Board* mpBoard;
+    std::string mBestMove;
 };
 
 
