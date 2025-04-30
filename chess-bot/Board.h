@@ -135,13 +135,18 @@ private:
     // See if the current board is in check or not
     bool inCheck(PieceColor color) const;
 
-    static bool algebraicToCoords(const std::string &algebraic, int &rank, int &file) {
-        if (algebraic.length() != 2) return false;
+    static std::pair<int, int> algebraicToCoords(const std::string &algebraic, int &rank, int &file) {
+        std::pair<int, int> defaultReturn = {-1, -1};
+        if (algebraic.length() != 2) return defaultReturn;
 
         file = algebraic[0] - 'a';
         rank = algebraic[1] - '1';
 
-        return (rank >= 0 && rank < 8 && file >= 0 && file < 8);
+        if (rank >= 0 && rank < 8 && file >= 0 && file < 8)
+            return {rank, file};
+
+        // return -1, -1 if failed
+        return defaultReturn;
     }
 
     // Convert rank/file to algebraic notation

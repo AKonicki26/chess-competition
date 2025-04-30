@@ -6,7 +6,6 @@
 
 #include <iostream>
 
-
 BoardMap Board::moveFunctions = {
     {PieceType::PAWN, Board::pawnMove},
     {PieceType::KNIGHT, Board::knightMove},
@@ -95,6 +94,7 @@ std::vector< std::string> Board::getValidMoves(PieceColor color) {
                 auto boardAfterMove = makeMove(move);
                 if (!boardAfterMove.inCheck(color))
                     validMoves.push_back(move);
+                    
             }
         }
     }
@@ -170,9 +170,9 @@ Board Board::makeMove(const std::string& move) const
 
     // get to and from where a piece is moving
     const int fromFile = move[0] - 'a';
-    const int fromRank = 8 - (move[1] - '0');
+    const int fromRank = move[1] - '1';
     const int toFile = move[2] - 'a';
-    const int toRank = 8 - (move[3] - '0');
+    const int toRank = move[3] - '1';  
 
     // get the piece at the original position
     const Piece movingPiece = getPiece(fromRank, fromFile);
@@ -200,6 +200,7 @@ bool Board::inCheck(PieceColor color) const
     }
 
     if (kingRank == -1) return false; // Defensive fallback
+    
 
     // Loop through all enemy pieces and see if any can attack the king
     PieceColor opponent = (color == PieceColor::WHITE) ? PieceColor::BLACK : PieceColor::WHITE;
@@ -210,10 +211,13 @@ bool Board::inCheck(PieceColor color) const
 
             std::vector<std::string> attacks = moveFunctions[p.type](this, p.color, r, f);
             for (const std::string& move : attacks) {
-                int toFile = move[2] - 'a';
-                int toRank = 8 - (move[3] - '0');
+                // get to where a piece is moving
+                const int toFile = move[2] - 'a';
+                const int toRank = move[3] - '1';  
+                
                 if (toRank == kingRank && toFile == kingFile)
-                    return true;
+                    return true
+                   
             }
         }
     }
