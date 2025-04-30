@@ -216,7 +216,7 @@ bool Board::inCheck(PieceColor color) const
                 const int toRank = move[3] - '1';  
                 
                 if (toRank == kingRank && toFile == kingFile)
-                    return true
+                    return true;
                    
             }
         }
