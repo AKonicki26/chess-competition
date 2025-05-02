@@ -5,6 +5,7 @@
 #include "Minimax.h"
 
 #include <thread>
+#include <mutex>
 
 // look depth moves deep to find the best possible move for the current player
 std::string Minimax::findBestMove(int depth)

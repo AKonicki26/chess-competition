@@ -35,7 +35,7 @@ std::string ChessSimulator::Move(std::string fen) {
   auto algorithm = Minimax(fen);
 
   
-  std::thread moveThread(&Minimax::findBestMove, &algorithm, 4);
+  std::thread moveThread(&Minimax::findBestMove, &algorithm, 3);
   moveThread.join();
   
   return algorithm.getBestMove();

@@ -36,6 +36,11 @@ inline PieceColor oppositeColor(const PieceColor& color)
     return color == PieceColor::WHITE ? PieceColor::BLACK : PieceColor::WHITE;
 }
 
+struct CheckInfo {
+    bool inCheck = false;
+    bool inCheckmate = false;
+};
+
 struct Piece {
     PieceType type: 3;
     PieceColor color: 1;
@@ -147,6 +152,11 @@ private:
     
     // See if the current board is in check or not
     bool inCheck(PieceColor color) const;
+
+    // See if current board is in checkmate
+    bool inCheckmate(PieceColor color) const;
+
+    CheckInfo generateCheckInfo(PieceColor) const;
 
     static std::pair<int, int> algebraicToCoords(const std::string &algebraic, int &rank, int &file) {
         std::pair<int, int> defaultReturn = {-1, -1};

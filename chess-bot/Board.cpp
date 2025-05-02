@@ -1,3 +1,5 @@
+#include "Board.h"
+#include "Board.h"
 //
 // Created by anne.konicki on 3/29/2025.
 //
@@ -127,8 +129,29 @@ int Board::evaluate(const PieceColor color) const
 {
     int score = 0;
 
+    PieceColor opponent = oppositeColor(color);
+
+    CheckInfo playerInfo = generateCheckInfo(color);
+    CheckInfo enemyInfo = generateCheckInfo(oppositeColor(color));
+
+    // If we can checkmate, thats so swag and cool for us
+    if (enemyInfo.inCheckmate)
+        score += 30000;
+    // If we end in checkmate, thats like the worst thing possible
+    if (playerInfo.inCheckmate)
+        score += -50000;
+
+    /*
+    // If we are in check, that is VERY bad
+    if (playerInfo.inCheck)
+        return 0;
+
+    // if the enemy is in check, thats pretty good!
+    if (enemyInfo.inCheck)
+        score += 12;
+    */
+
     // Give points for having more pieces alive than the other player
-    
     // Go through each piece on the board
     for (int rank = 0; rank < 8; ++rank) {
         for (int file = 0; file < 8; ++file) {
@@ -274,4 +297,105 @@ bool Board::inCheck(PieceColor color) const
     }
 
     return false;
+}
+
+bool Board::inCheckmate(PieceColor color) const
+{
+    // Locate the king
+    int kingRank = -1, kingFile = -1;
+    for (int r = 0; r < 8; ++r) {
+        for (int f = 0; f < 8; ++f) {
+            Piece p = getPiece(r, f);
+            if (p.type == PieceType::KING && p.color == color) {
+                kingRank = r;
+                kingFile = f;
+                break;
+            }
+        }
+    }
+
+    if (kingRank == -1) return false; // Defensive fallback
+
+    int canKillKingCount = 0;
+
+    // Loop through all enemy pieces and see if any can attack the king
+    PieceColor opponent = (color == PieceColor::WHITE) ? PieceColor::BLACK : PieceColor::WHITE;
+    for (int r = 0; r < 8; ++r) {
+        for (int f = 0; f < 8; ++f) {
+            Piece p = getPiece(r, f);
+            if (p.isEmpty() || p.color != opponent) continue;
+
+            std::vector<std::string> attacks = moveFunctions[p.type](this, p.color, r, f);
+            for (const std::string& move : attacks) {
+                // get to where a piece is moving
+                const int toFile = move[2] - 'a';
+                const int toRank = move[3] - '1';
+
+                if (toRank == kingRank && toFile == kingFile)
+                    canKillKingCount++;
+
+            }
+        }
+    }
+
+    return (canKillKingCount >= 2);
+}
+
+CheckInfo Board::generateCheckInfo(PieceColor color) const
+{
+    // Locate the king
+    int kingRank = -1, kingFile = -1;
+    for (int r = 0; r < 8; ++r) {
+        for (int f = 0; f < 8; ++f) {
+            Piece p = getPiece(r, f);
+            if (p.type == PieceType::KING && p.color == color) {
+                kingRank = r;
+                kingFile = f;
+                break;
+            }
+        }
+    }
+
+    if (kingRank == -1) return {}; // Defensive fallback
+
+    int canKillKingCount = 0;
+    int possibleKingMoves = 0;
+
+    CheckInfo info;
+
+    // Loop through all enemy pieces and see if any can attack the king
+    PieceColor opponent = (color == PieceColor::WHITE) ? PieceColor::BLACK : PieceColor::WHITE;
+    for (int r = 0; r < 8; ++r) {
+        for (int f = 0; f < 8; ++f) {
+            Piece p = getPiece(r, f);
+
+            // If our king has no valid moves, we are in checkmate
+            if (p.type == PieceType::KING && p.color == color) {
+                if (moveFunctions[p.type](this, p.color, r, f).empty())
+                    info.inCheckmate = true;
+            }
+
+            if (p.isEmpty() || p.color != opponent) continue;
+
+            std::vector<std::string> attacks = moveFunctions[p.type](this, p.color, r, f);
+            
+            
+
+            for (const std::string& move : attacks) {
+                // get to where a piece is moving
+                const int toFile = move[2] - 'a';
+                const int toRank = move[3] - '1';
+
+                if (toRank == kingRank && toFile == kingFile) {
+                    canKillKingCount++;
+                    info.inCheck = true;
+                }
+            }
+        }
+    }
+
+    if (canKillKingCount >= 2)
+        info.inCheckmate = true;
+
+    return info;
 }
